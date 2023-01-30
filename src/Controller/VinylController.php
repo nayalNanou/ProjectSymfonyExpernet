@@ -10,18 +10,23 @@ class VinylController extends AbstractController
     #[Route('/', name: 'homepage')]
     public function homepage(): Response
     {
-        return new Response('PHP EIYUU');
+        return $this->render('homepage.html.twig', [
+            'songs' => $this->getSongs()
+        ]);
     }
 
-    #[Route('/browse', name: 'browse')]
-    public function browse(): Response
+    public function getSongs()
     {
-        return new Response('Tous les genres');
-    }
-
-    #[Route('/browse/{randomGenre}', name: 'browse_genre')]
-    public function browseGenre(string $randomGenre): Response
-    {
-        return new Response($randomGenre);
+        return [
+            "Gangsta's Paradise - Coolio",
+            "Waterfalls - TLC",
+            "Creep - TLC",
+            "Kiss from a Rose - Seal",
+            "On Bended Knee - Boyz II Men",
+            "Another Night - Real McCoy",
+            "Fantasy - Mariah Carey",
+            "Take a Bow - Madonna",
+            "Miley Cyrus - ######"
+        ];
     }
 }
