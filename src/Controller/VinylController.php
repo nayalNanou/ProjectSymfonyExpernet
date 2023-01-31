@@ -5,15 +5,18 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use function Symfony\Component\String\u;
+use Twig\Environment;
 
 class VinylController extends AbstractController
 {
     #[Route('/', name: 'homepage')]
-    public function homepage(): Response
+    public function homepage(Environment $myTwig): Response
     {
-        return $this->render('homepage.html.twig', [
-            'songs' => $this->getSongsTitles()
-        ]);
+        return new Response(
+            $myTwig->render('homepage.html.twig', [
+                'songs' => $this->getSongsTitles()
+            ])
+        );
     }
 
     #[Route('/browse/{slug}', name: 'browse')]
