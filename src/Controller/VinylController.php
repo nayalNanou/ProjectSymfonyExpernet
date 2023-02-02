@@ -1,11 +1,15 @@
 <?php
 namespace App\Controller;
 
+use Twig\Environment;
+use Psr\Cache\CacheItemInterface;
+use function Symfony\Component\String\u;
+use Symfony\Contracts\Cache\CacheInterface;
+use Knp\Bundle\TimeBundle\DateTimeFormatter;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use function Symfony\Component\String\u;
-use Twig\Environment;
 
 class VinylController extends AbstractController
 {
@@ -20,12 +24,22 @@ class VinylController extends AbstractController
     }
 
     #[Route('/browse/{slug}', name: 'browse')]
-    public function browse($slug = '')
+    public function browse(CacheInterface $cache, DateTimeFormatter $formatter, HttpClientInterface $client, string $slug = '')
     {
+        $mixes = $cache->get('mixes_data', function(CacheItemInterface $cacheItem) use ($client) {
+            $cacheItem->expiresAfter(5);
+
+            $response = $client->request(
+                'GET',
+                'https://raw.githubusercontent.com/SymfonyCasts/vinyl-mixes/main/mixes.json'
+            );
+            return $response->toArray();
+        });
+
         $genre = $slug ? u(str_replace('-', ' ', $slug))->title(true) : null;
 
         return $this->render('vinyl/browse.html.twig', [
-            'mixes' => $this->getMixes(),
+            'mixes' => $mixes,
             'genre' => $genre 
         ]); 
     }
