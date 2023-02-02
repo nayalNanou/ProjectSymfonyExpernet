@@ -18,7 +18,7 @@ class VinylMix
     #[ORM\Column(name: 'description', type: 'text', nullable: true)]
     private ?string $description = null;
 
-    #[ORM\Column(name: 'track_count', type: 'int')]
+    #[ORM\Column(name: 'track_count', type: 'integer')]
     private ?int $trackCount = null;
 
     #[ORM\Column(name: 'created_at', type: 'datetime_immutable')]
