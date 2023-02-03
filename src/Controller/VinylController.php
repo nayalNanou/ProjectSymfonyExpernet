@@ -10,6 +10,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Doctrine\ORM\EntityManagerInterface;
+use App\Entity\VinylMix;
 
 class VinylController extends AbstractController
 {
@@ -24,16 +26,14 @@ class VinylController extends AbstractController
     }
 
     #[Route('/browse/{slug}', name: 'browse')]
-    public function browse(CacheInterface $cache, DateTimeFormatter $formatter, HttpClientInterface $client, string $slug = '')
+    public function browse(EntityManagerInterface $em, CacheInterface $cache, HttpClientInterface $client, string $slug = '')
     {
-        $mixes = $cache->get('mixes_data', function(CacheItemInterface $cacheItem) use ($client) {
-            $cacheItem->expiresAfter(5);
+        $mixes = $cache->get('mixes_data', function(CacheItemInterface $cacheItem) use ($client, $em, $slug) {
+            $cacheItem->expiresAfter(1);
 
-            $response = $client->request(
-                'GET',
-                'https://raw.githubusercontent.com/SymfonyCasts/vinyl-mixes/main/mixes.json'
-            );
-            return $response->toArray();
+            $vinylMixRepository = $em->getRepository(VinylMix::class);
+
+            return $vinylMixRepository->filterByGenre($slug);
         });
 
         $genre = $slug ? u(str_replace('-', ' ', $slug))->title(true) : null;

@@ -2,8 +2,9 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use App\Repository\VinylMixRepository;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: VinylMixRepository::class)]
 #[ORM\Table(name: 'vinyl_mix')]
 class VinylMix
 {
@@ -22,10 +23,18 @@ class VinylMix
     private ?int $trackCount = null;
 
     #[ORM\Column(name: 'created_at', type: 'datetime_immutable')]
-    private ?\DateTimeImmutable $createdAt = null;
+    private ?\DateTimeImmutable $createdAt;
 
     #[ORM\Column(name: 'genre', type: 'string', length: 255, nullable: true)]
     private ?string $genre = null;
+
+    #[ORM\Column(name: 'votes', type: 'integer')]
+    private ?int $votes = 0;
+
+    public function __construct()
+    {
+        $this->createdAt = new \DateTimeImmutable;
+    }
 
     public function getId(): ?int
     {
@@ -90,5 +99,33 @@ class VinylMix
         $this->genre = $genre;
 
         return $this;
+    }
+
+    public function getVotes(): ?int
+    {
+        return $this->votes;
+    }
+
+    public function setVotes(?int $votes): self
+    {
+        $this->votes = $votes;
+
+        return $this;
+    }
+
+    public function getVotesString(): string
+    {
+        if ($this->votes > 0) {
+            return sprintf('+%d', $this->votes);
+        } else if ($this->votes < 0) {
+            return sprintf('%d', $this->votes);
+        } else {
+            return '0';
+        }
+    }
+
+    public function getImageUrl(int $width): string
+    {
+        return sprintf('https://picsum.photos/id/%d/%d', ($this->getId() + 50) % 1000, $width);
     }
 }
