@@ -2,15 +2,41 @@
 namespace App\Controller;
 
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\VinylMix;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Psr\Cache\CacheItemInterface;
+use function Symfony\Component\String\u;
 
 class MixController extends AbstractController
 {
+    #[Route('/browse/{slug}', name: 'browse')]
+    public function browse(EntityManagerInterface $em, CacheInterface $cache, HttpClientInterface $client, string $slug = ''): Response
+    {
+        $mixes = $cache->get('mixes_data', function(CacheItemInterface $cacheItem) use ($client, $em, $slug) {
+            $cacheItem->expiresAfter(1);
+
+            $vinylMixRepository = $em->getRepository(VinylMix::class);
+
+            return $vinylMixRepository->filterByGenre($slug);
+        });
+
+        $genre = $slug ? u(str_replace('-', ' ', $slug))->title(true) : null;
+
+dump($mixes);
+
+        return $this->render('mix/browse.html.twig', [
+            'mixes' => $mixes,
+            'genre' => $genre 
+        ]); 
+    }
+
     #[Route('/mix/new', name: 'mix_new')]
-    public function new(EntityManagerInterface $entityManager)
+    public function new(EntityManagerInterface $entityManager): Response
     {
         $titles = [
             'Sarah -  Master For A Living',
@@ -37,11 +63,30 @@ class MixController extends AbstractController
         dd($mix);
     }
 
-    #[Route('/mix/{id}', name: 'mix_show')]
-    public function show(int $id, EntityManagerInterface $entityManager)
+    #[Route('/mix/{id}/vote', name: 'mix_vote', methods: "POST")]
+    public function vote(VinylMix $mix, Request $request, EntityManagerInterface $entityManager): Response
     {
-        $mix = $entityManager->getRepository(VinylMix::class)->find($id);
+        $thumb = $request->request->get('direction');
 
-        dd($mix);
+        if ($thumb == 'up') {
+            $mix->setVotes($mix->getVotes() + 1);
+        } else {
+            $mix->setVotes($mix->getVotes() - 1);
+        }
+
+        $entityManager->persist($mix);
+        $entityManager->flush($mix);
+
+        $this->addFlash('success', 'Le vote a bien été pris en compte');
+
+        return $this->redirectToRoute('mix_show', ['id' => $mix->getId()]);
+    }
+
+    #[Route('/mix/{id}', name: 'mix_show')]
+    public function show(VinylMix $mix): Response
+    {
+        return $this->render('mix/show.html.twig', [
+            'mix' => $mix
+        ]);
     }
 }

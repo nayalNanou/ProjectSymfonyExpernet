@@ -2,13 +2,9 @@
 namespace App\Controller;
 
 use Twig\Environment;
-use Psr\Cache\CacheItemInterface;
-use function Symfony\Component\String\u;
-use Symfony\Contracts\Cache\CacheInterface;
 use Knp\Bundle\TimeBundle\DateTimeFormatter;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\VinylMix;
@@ -23,25 +19,6 @@ class VinylController extends AbstractController
                 'songs' => $this->getSongsTitles()
             ])
         );
-    }
-
-    #[Route('/browse/{slug}', name: 'browse')]
-    public function browse(EntityManagerInterface $em, CacheInterface $cache, HttpClientInterface $client, string $slug = '')
-    {
-        $mixes = $cache->get('mixes_data', function(CacheItemInterface $cacheItem) use ($client, $em, $slug) {
-            $cacheItem->expiresAfter(1);
-
-            $vinylMixRepository = $em->getRepository(VinylMix::class);
-
-            return $vinylMixRepository->filterByGenre($slug);
-        });
-
-        $genre = $slug ? u(str_replace('-', ' ', $slug))->title(true) : null;
-
-        return $this->render('vinyl/browse.html.twig', [
-            'mixes' => $mixes,
-            'genre' => $genre 
-        ]); 
     }
 
     public function getSongsTitles()
